@@ -1,5 +1,14 @@
 import enum
 from dataclasses import dataclass
+import time
+
+import pygame
+
+class Direction(enum.Enum):
+    Right = 1
+    Left = 2
+    Up = 3
+    Down = 4
 
 @dataclass
 class Position:
@@ -38,12 +47,6 @@ class Position:
         else:
             return False
     
-class Direction(enum.Enum):
-    Right = 1
-    Left = 2
-    Up = 3
-    Down = 4
-
 class Snake:
     def __init__(self, name, start, end):
         self.name: str = name
@@ -113,6 +116,9 @@ class Snake:
                 for i in range(1, count):
                     new_y = (self.start.y + i)
                     self.cells.append(Position(self.start.x, new_y))
+
+    def check_collision(self, pos: Position) -> bool:
+        return bool(self.start == pos or self.end == pos or pos in self.cells)
         
     def __str__(self):
         return f"""
@@ -228,6 +234,90 @@ def update_priest(priest):
 
     return priest
 
+class Game:
+    def __init__(self, rows, cols, snakes, priest, win_pos):
+        self.snakes = snakes
+        self.priest = priest
+        self.win_pos = win_pos
+
+        self.rows = rows
+        self.cols = cols
+        self.__fps = 60
+        self.height = 600
+        self.width = 600
+
+        pygame.init()
+        self.WIN = pygame.display.set_mode((self.height, self.width))
+        pygame.display.set_caption('snake and a priest')
+        self.blockSize = self.get_blk_size()
+
+    def get_blk_size(self):
+        return int(self.height / self.rows)
+
+    def render_snakes(self):
+        for snake in self.snakes:
+            r = pygame.Rect(snake.start.y* self.blockSize, snake.start.x* self.blockSize, self.blockSize, self.blockSize)
+            pygame.draw.rect(self.WIN, (3, 123, 123), r, 0)
+
+            r = pygame.Rect(snake.end.y* self.blockSize, snake.end.x* self.blockSize, self.blockSize, self.blockSize)
+            pygame.draw.rect(self.WIN, (3, 123, 123), r, 0)
+
+            for i in snake.cells:
+                r = pygame.Rect(i.y* self.blockSize, i.x* self.blockSize, self.blockSize, self.blockSize)
+                pygame.draw.rect(self.WIN, (3, 123, 123), r, 0)
+
+        update_snakes(self.snakes, 10)
+        pygame.display.flip()
+
+    def render_priest(self):
+        r = pygame.Rect(self.priest.pos.y* self.blockSize, self.priest.pos.x* self.blockSize, self.blockSize, self.blockSize)
+        pygame.draw.rect(self.WIN, (0, 0, 255), r, 0)
+        update_priest(self.priest)
+        pygame.display.flip()
+
+    def run(self):
+        run = True
+        clock = pygame.time.Clock()
+        tick = 0
+
+        self.WIN.fill((0, 255, 0))
+        self.render_snakes()
+        self.render_priest()
+
+        bittenBy = None
+
+        while run:
+            clock.tick(self.__fps)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    run = False
+                    continue
+
+            if tick == self.__fps:
+                if self.priest.pos == self.win_pos:
+                    run = False
+            
+                for snake in self.snakes:
+                    if snake.check_collision(self.priest.pos):
+                        bittenBy = snake
+                        run = False
+                        continue
+
+                self.render_snakes()
+                self.render_priest()
+                tick = 0
+            else:
+                tick += 1
+
+            self.WIN.fill((0, 255, 0))
+
+        pygame.quit()
+
+        if bittenBy is None:
+            print("NIRVANAN")
+        else:
+            print(bittenBy.name, self.priest.pos)
+
 def main():
     board = init_board()
 
@@ -235,27 +325,8 @@ def main():
     snakes = init_snakes()
     priest, respective_end = init_priest(len(board))
 
-    bitten = False
-
-    # print("Initial")
-    # print_snakes(snakes)
-    # for i in range(7):
-        # print("Cycle: ", i)
-        # snakes = update_snakes(snakes, len(board))
-        # print_snakes(snakes)
-
-
-    while priest.pos != respective_end and not bitten:
-        snakes = update_snakes(snakes, board_size)
-        update_priest(priest)
-
-        for snake in snakes:
-            if priest.pos == snake.start or priest.pos == snake.end or priest.pos in snake.cells:
-                print(f"{snake.name} {priest.pos.x},{priest.pos.y}")
-                bitten = True
-
-    if not bitten:
-        print("NIRVANAN")
+    game = Game(10, 10, snakes, priest, respective_end)
+    game.run()
 
 if __name__ == '__main__':
     main()
