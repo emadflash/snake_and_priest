@@ -29,7 +29,7 @@ void render_and_update_snakes(sf::RenderWindow& window, Game* game, unsigned int
         for (unsigned int i = 0; i < snake->cells_count; ++i) {
             cell.setOutlineColor(sf::Color::Green);
             cell.setFillColor(sf::Color::Green);
-            cell.setPosition(snake->cells[0].y * cell_width, snake->cells[0].x * cell_width);
+            cell.setPosition(snake->cells[i].y * cell_width, snake->cells[i].x * cell_width);
             cell.setSize(sf::Vector2f(cell_width, cell_width));
             window.draw(cell);
         }
@@ -66,6 +66,10 @@ int main(int argc, char* argv[])
         fclose(input_file);
         exit(1);
     }
+
+    // NOTE(madflash) - Close file after reading
+    fclose(input_file);
+
     unsigned int cell_width = SCREEN_HEIGHT / game.boardSize;
 
     sf::RenderWindow window { sf::VideoMode(SCREEN_HEIGHT, SCREEN_WIDTH), "Snake and a priest", sf::Style::Titlebar };
@@ -99,12 +103,9 @@ int main(int argc, char* argv[])
 
         if (GameIsPriestAtWinningPosition(&game)) {
             std::cout << "NIRVANAN";
-            sf::sleep(sf::milliseconds(10000));
+            sf::sleep(sf::milliseconds(1000));
             isQuit = true;
-        }
-
-        BittenBy = GameIsPriestCollision(&game);
-        if (BittenBy) {
+        } else if (BittenBy = GameIsPriestCollision(&game); BittenBy) {
             printf("%s %d, %d\n", BittenBy->name, game.priest.pos.x, game.priest.pos.y);
             sf::sleep(sf::milliseconds(1000));
             isQuit = true;
