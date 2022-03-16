@@ -49,12 +49,15 @@ int main(int argc, char* argv[])
     }
 
     int isBitten = 0;
+    const Snake* BittenBy;
+
     while (1) {
         update_snakes(&game);
         update_priest(&game);
 
-        if (GameIsPriestCollision(&game)) {
-            printf("%d, %d\n", game.priest.pos.x, game.priest.pos.y);
+        BittenBy = GameIsPriestCollision(&game);
+        if (BittenBy) {
+            printf("%s %d, %d\n", BittenBy->name, game.priest.pos.x, game.priest.pos.y);
             isBitten = 1;
             break;
         }

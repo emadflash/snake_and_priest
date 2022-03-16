@@ -7,6 +7,10 @@
 #include <stdarg.h>
 #include <assert.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Helper macros
 #define ABS(X)                  (((X) < 0) ? (-(X)) : (X))
@@ -350,6 +354,27 @@ void PriestInit(Priest* priest, Position pos, DIRECTION direction)
     priest->direction = direction;
 }
 
+void PriestMove(Priest* priest)
+{
+    switch (priest->direction) {
+    case DIRECTION_up:
+    PositionMoveUp(&priest->pos);
+    break;
+
+    case DIRECTION_down:
+    PositionMoveDown(&priest->pos);
+    break;
+
+    case DIRECTION_left:
+    PositionMoveLeft(&priest->pos);
+    break;
+
+    case DIRECTION_right:
+    PositionMoveRight(&priest->pos);
+    break;
+    }
+}
+
 // ====----------------------------------------------------------------------------------------
 //
 //
@@ -543,14 +568,26 @@ int InitGameFromFile(Game* info, FILE* fp)
     return 0;
 }
 
-int GameIsPriestCollision(Game* game)
+void GameUpdateSnakes(Game* game)
+{
+    for (unsigned int i = 0; i < game->snakes_count; ++i) {
+        SnakeMove(&game->snakes[i]);
+    }
+}
+
+void GameUpdatePriest(Game* game)
+{
+    PriestMove(&game->priest);
+}
+
+const Snake* GameIsPriestCollision(Game* game)
 {
     for (unsigned int i = 0; i < game->snakes_count; ++i) {
         if (SnakeIsCollisionWith(&game->snakes[i], &game->priest.pos))
-            return 1;
+            return &game->snakes[i];
     }
 
-    return 0;
+    return NULL;
 }
 
 int GameIsPriestAtWinningPosition(Game* game)
@@ -613,6 +650,10 @@ int main(void)
 
     fclose(fp);
     return 0;
+}
+#endif
+
+#ifdef __cplusplus
 }
 #endif
 
